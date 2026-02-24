@@ -23,7 +23,7 @@ export default function Matriculas() {
 
   useEffect(() => { cargarDatos() }, [])
 
-  const cargarDatos = async () => {
+  const cargarDatos = async (selectedId = null) => {
     setLoading(true)
     try {
       const [matRes, estRes, materiasRes] = await Promise.all([
@@ -31,9 +31,19 @@ export default function Matriculas() {
         estudianteAPI.listar(),
         materiaAPI.listar()
       ])
-      setMatriculas(matRes.data.matriculas)
+      const nuevasMatriculas = matRes.data.matriculas
+      setMatriculas(nuevasMatriculas)
       setEstudiantes(estRes.data.estudiantes)
       setMaterias(materiasRes.data.materias)
+      // Sincronizar selectedMatricula con datos frescos del servidor
+      if (selectedId) {
+        const fresca = nuevasMatriculas.find(m => m._id === selectedId)
+        if (fresca) setSelectedMatricula(fresca)
+      } else {
+        setSelectedMatricula(prev =>
+          prev ? (nuevasMatriculas.find(m => m._id === prev._id) || null) : null
+        )
+      }
     } catch (err) {
       setError(err.response?.data?.msg || 'Error al cargar datos')
     } finally {
@@ -90,11 +100,12 @@ export default function Matriculas() {
     setLoading(true)
     setError('')
     try {
-      await matriculaAPI.agregarMateria(selectedMatricula._id, newMateria)
+      const matriculaId = selectedMatricula._id
+      await matriculaAPI.agregarMateria(matriculaId, newMateria)
       setSuccess('✅ Materia agregada correctamente')
       setNewMateria('')
       setShowMateriaForm(false)
-      await cargarDatos()
+      await cargarDatos(matriculaId)
     } catch (err) {
       setError(err.response?.data?.msg || 'Error al agregar materia')
     } finally {
@@ -108,7 +119,7 @@ export default function Matriculas() {
     try {
       await matriculaAPI.eliminarMateria(matriculaId, materiaId)
       setSuccess('✅ Materia eliminada')
-      await cargarDatos()
+      await cargarDatos(matriculaId)
     } catch (err) {
       setError(err.response?.data?.msg || 'Error al eliminar materia')
     } finally {
