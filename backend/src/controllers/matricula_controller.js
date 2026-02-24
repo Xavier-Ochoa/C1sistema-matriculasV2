@@ -2,12 +2,11 @@ import Matricula from "../models/Matricula.js"
 import Estudiante from "../models/Estudiante.js"
 import Materia from "../models/Materia.js"
 
-const calcularCreditos = async (matricula) => {
+const calcularCreditos = (matricula) => {
   if (!matricula.materias || matricula.materias.length === 0) {
     matricula.creditosCalculados = 0
     return 0
   }
-  await matricula.populate('materias', 'creditos')
   let total = 0
   for (const mat of matricula.materias) {
     if (mat && mat.creditos) total += Number(mat.creditos) || 0
@@ -22,7 +21,7 @@ const listarMatriculas = async (req, res) => {
       .populate('id_estudiante', 'nombre apellido cedula email')
       .populate('materias', 'nombre codigo creditos')
       .select('-__v')
-    for (let m of matriculas) await calcularCreditos(m)
+    for (let m of matriculas) calcularCreditos(m)
     res.status(200).json({ msg: "Matrículas listadas correctamente", total: matriculas.length, matriculas })
   } catch (error) {
     res.status(500).json({ msg: `❌ Error - ${error.message}` })
@@ -38,7 +37,7 @@ const detalleMatricula = async (req, res) => {
       .populate('materias', 'nombre codigo creditos')
       .select('-__v')
     if (!matricula) return res.status(404).json({ msg: "Matrícula no encontrada" })
-    await calcularCreditos(matricula)
+    calcularCreditos(matricula)
     res.status(200).json({ msg: "Matrícula encontrada", matricula })
   } catch (error) {
     res.status(500).json({ msg: `❌ Error - ${error.message}` })
@@ -78,7 +77,7 @@ const crearMatricula = async (req, res) => {
     let matricula = await Matricula.findById(nueva._id)
       .populate('id_estudiante', 'nombre apellido cedula email')
       .populate('materias', 'nombre codigo creditos')
-    await calcularCreditos(matricula)
+    calcularCreditos(matricula)
     res.status(201).json({ msg: "Matrícula creada correctamente", matricula })
   } catch (error) {
     if (error.code === 11000) {
@@ -119,7 +118,7 @@ const actualizarMatricula = async (req, res) => {
     let actualizada = await Matricula.findById(id)
       .populate('id_estudiante', 'nombre apellido cedula email')
       .populate('materias', 'nombre codigo creditos')
-    await calcularCreditos(actualizada)
+    calcularCreditos(actualizada)
     res.status(200).json({ msg: "Matrícula actualizada correctamente", matricula: actualizada })
   } catch (error) {
     res.status(500).json({ msg: `❌ Error - ${error.message}` })
@@ -145,7 +144,7 @@ const agregarMateria = async (req, res) => {
     let actualizada = await Matricula.findById(id)
       .populate('id_estudiante', 'nombre apellido cedula email')
       .populate('materias', 'nombre codigo creditos')
-    await calcularCreditos(actualizada)
+    calcularCreditos(actualizada)
     res.status(200).json({ msg: "Materia agregada correctamente", matricula: actualizada })
   } catch (error) {
     res.status(500).json({ msg: `❌ Error - ${error.message}` })
@@ -169,7 +168,7 @@ const eliminarMateria = async (req, res) => {
     let actualizada = await Matricula.findById(id)
       .populate('id_estudiante', 'nombre apellido cedula email')
       .populate('materias', 'nombre codigo creditos')
-    await calcularCreditos(actualizada)
+    calcularCreditos(actualizada)
     res.status(200).json({ msg: "Materia eliminada correctamente", matricula: actualizada })
   } catch (error) {
     res.status(500).json({ msg: `❌ Error - ${error.message}` })
@@ -186,7 +185,7 @@ const eliminarMatricula = async (req, res) => {
       .populate('materias', 'nombre codigo creditos')
     if (!matricula) return res.status(404).json({ msg: "Matrícula no encontrada" })
 
-    await calcularCreditos(matricula)
+    calcularCreditos(matricula)
     res.status(200).json({ msg: "Matrícula eliminada correctamente", matricula })
   } catch (error) {
     res.status(500).json({ msg: `❌ Error - ${error.message}` })
